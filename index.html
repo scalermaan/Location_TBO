@@ -3,13 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="format-detection" content="telephone=no">
     <title>ส่งพิกัด</title>
-    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <style>
         body {
             padding: 20px;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             background-color: #f5f5f5;
+            -webkit-text-size-adjust: 100%;
         }
         .container {
             max-width: 500px;
@@ -23,6 +25,7 @@
             text-align: center;
             color: #333;
             margin-bottom: 20px;
+            font-size: 24px;
         }
         .input-group {
             margin-bottom: 15px;
@@ -31,6 +34,7 @@
             display: block;
             margin-bottom: 5px;
             color: #666;
+            font-size: 16px;
         }
         input {
             width: 100%;
@@ -40,6 +44,8 @@
             border-radius: 6px;
             box-sizing: border-box;
             font-size: 16px;
+            -webkit-appearance: none;
+            appearance: none;
         }
         .btn {
             width: 100%;
@@ -51,6 +57,9 @@
             font-size: 16px;
             font-weight: bold;
             transition: background-color 0.3s;
+            -webkit-appearance: none;
+            appearance: none;
+            touch-action: manipulation;
         }
         .btn-primary {
             background-color: #06c755;
@@ -82,18 +91,24 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+        /* สไตล์สำหรับ iOS */
+        @supports (-webkit-touch-callout: none) {
+            input, button {
+                font-size: 16px;
+            }
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>ส่งพิกัดของคุณ</h1>
+        <h1>แจ้งพิกัดที่ไฟดับได้เลยครับ</h1>
         <div class="input-group">
             <label for="phoneNumber">เบอร์โทร:</label>
             <input 
                 type="tel" 
                 id="phoneNumber" 
                 placeholder="กรุณากรอกเบอร์โทร" 
-                pattern="[0-9]*" 
+                pattern="[0-9]*"
                 inputmode="numeric"
                 maxlength="10"
                 autocomplete="tel"
@@ -106,38 +121,58 @@
     </div>
 
     <script>
+        let isLiffInitialized = false;
+
         // เริ่มต้น LIFF
         async function initializeLiff() {
             try {
-                await liff.init({ liffId: "2006878998-85e4J3zg" });
+                await liff.init({ liffId: "https://liff.line.me/2006878998-85e4J3zg" });
+                isLiffInitialized = true;
+                console.log("LIFF initialization succeeded");
+                
+                // ตรวจสอบการล็อกอินหลังจาก initialize สำเร็จ
                 if (!liff.isLoggedIn()) {
+                    console.log("User not logged in, initiating login");
                     liff.login();
                 }
             } catch (error) {
-                console.error("LIFF Initialization failed", error);
-                alert("❌ เกิดข้อผิดพลาดในการเริ่มต้น LIFF: " + error.message);
+                console.error("LIFF initialization failed:", error);
+                isLiffInitialized = false;
             }
         }
 
         // ฟังก์ชันโทรฉุกเฉิน
         function makeEmergencyCall() {
-            window.location.href = "tel:042431155";
+            // ใช้ window.open เพื่อความเข้ากันได้กับ iOS
+            window.open("tel:042431155", "_system");
+        }
+
+        // ฟังก์ชันตรวจสอบการป้อนข้อมูล
+        function setupInputHandling() {
+            const phoneInput = document.getElementById('phoneNumber');
+            
+            // จัดการการป้อนข้อมูล
+            phoneInput.addEventListener('input', function(e) {
+                let value = e.target.value.replace(/\D/g, '');
+                if (value.length > 10) {
+                    value = value.slice(0, 10);
+                }
+                e.target.value = value;
+            });
+
+            // ป้องกันการซูมบน iOS
+            phoneInput.addEventListener('focus', function(e) {
+                e.target.setAttribute('readonly', 'readonly');
+                setTimeout(function() {
+                    e.target.removeAttribute('readonly');
+                }, 100);
+            });
         }
 
         // ตรวจสอบเบอร์โทร
         function validatePhoneNumber(phone) {
-            const phoneRegex = /^[0-9]{10}$/;
-            return phoneRegex.test(phone);
+            return /^[0-9]{10}$/.test(phone);
         }
-
-        // เพิ่ม Event Listener สำหรับการกรอกเบอร์โทร
-        document.getElementById('phoneNumber').addEventListener('input', function(e) {
-            let value = e.target.value.replace(/\D/g, ''); // ลบตัวอักษรที่ไม่ใช่ตัวเลข
-            if (value.length > 10) {
-                value = value.slice(0, 10); // จำกัดความยาวไม่เกิน 10 ตัว
-            }
-            e.target.value = value;
-        });
 
         // ฟังก์ชันรับตำแหน่งและส่งข้อมูล
         async function getLocation() {
@@ -165,8 +200,13 @@
             }
 
             try {
+                // ตรวจสอบว่า LIFF พร้อมใช้งาน
+                if (!isLiffInitialized) {
+                    await initializeLiff();
+                }
+
                 if (!liff.isLoggedIn()) {
-                    alert("กรุณาเข้าสู่ระบบ LINE ก่อน");
+                    console.log("User not logged in, initiating login");
                     liff.login();
                     return;
                 }
@@ -194,13 +234,13 @@
                     liff.closeWindow();
                 }
             } catch (error) {
+                console.error("Error in getLocation:", error);
                 if (error.code === 1) {
                     alert("❌ คุณปฏิเสธการเข้าถึงตำแหน่ง กรุณาอนุญาตเพื่อใช้งานฟีเจอร์นี้");
                 } else if (error.code === 3) {
                     alert("❌ เกิดข้อผิดพลาด: เวลาในการรับตำแหน่งหมดอายุ");
                 } else {
-                    console.error("Error: ", error);
-                    alert("❌ เกิดข้อผิดพลาดในการส่งข้อมูล: " + error.message);
+                    alert("❌ เกิดข้อผิดพลาดในการส่งข้อมูล กรุณาลองใหม่อีกครั้ง");
                 }
             } finally {
                 resetButton(sendButton);
@@ -213,7 +253,11 @@
             button.disabled = false;
         }
 
-        document.addEventListener("DOMContentLoaded", initializeLiff);
+        // เริ่มต้นแอพ
+        document.addEventListener("DOMContentLoaded", () => {
+            initializeLiff();
+            setupInputHandling();
+        });
     </script>
 </body>
 </html>
