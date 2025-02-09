@@ -4,31 +4,63 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ส่งพิกัด</title>
-    <!-- เพิ่ม LIFF SDK -->
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <style>
         body {
             padding: 20px;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: #f5f5f5;
         }
         .container {
             max-width: 500px;
             margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
-        input, button {
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .input-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #666;
+        }
+        input {
             width: 100%;
-            padding: 10px;
-            margin: 10px 0;
+            padding: 12px;
+            margin-bottom: 10px;
             border: 1px solid #ddd;
-            border-radius: 4px;
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 16px;
         }
-        button {
+        .btn {
+            width: 100%;
+            padding: 12px;
+            margin: 5px 0;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+        .btn-primary {
             background-color: #06c755;
             color: white;
-            border: none;
-            cursor: pointer;
         }
-        button:disabled {
+        .btn-emergency {
+            background-color: #ff4b4b;
+            color: white;
+        }
+        .btn:disabled {
             background-color: #cccccc;
         }
         .loading {
@@ -55,16 +87,28 @@
 <body>
     <div class="container">
         <h1>ส่งพิกัดของคุณ</h1>
-        <label for="phoneNumber">เบอร์โทร:</label>
-        <input type="tel" id="phoneNumber" placeholder="กรุณากรอกเบอร์โทร" pattern="[0-9]{10}">
-        <button id="sendLocationBtn" onclick="getLocation()">ส่งพิกัด</button>
+        <div class="input-group">
+            <label for="phoneNumber">เบอร์โทร:</label>
+            <input 
+                type="tel" 
+                id="phoneNumber" 
+                placeholder="กรุณากรอกเบอร์โทร" 
+                pattern="[0-9]*" 
+                inputmode="numeric"
+                maxlength="10"
+                autocomplete="tel"
+            >
+        </div>
+        <button class="btn btn-primary" id="sendLocationBtn" onclick="getLocation()">ส่งพิกัด</button>
+        <button class="btn btn-emergency" onclick="makeEmergencyCall()">
+            ☎️ โทรเร่งด่วน 042-431155
+        </button>
     </div>
 
     <script>
         // เริ่มต้น LIFF
         async function initializeLiff() {
             try {
-                // แทนที่ LIFF ID ด้วย ID ของคุณ
                 await liff.init({ liffId: "2006878998-85e4J3zg" });
                 if (!liff.isLoggedIn()) {
                     liff.login();
@@ -75,18 +119,31 @@
             }
         }
 
+        // ฟังก์ชันโทรฉุกเฉิน
+        function makeEmergencyCall() {
+            window.location.href = "tel:042431155";
+        }
+
         // ตรวจสอบเบอร์โทร
         function validatePhoneNumber(phone) {
             const phoneRegex = /^[0-9]{10}$/;
             return phoneRegex.test(phone);
         }
 
+        // เพิ่ม Event Listener สำหรับการกรอกเบอร์โทร
+        document.getElementById('phoneNumber').addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, ''); // ลบตัวอักษรที่ไม่ใช่ตัวเลข
+            if (value.length > 10) {
+                value = value.slice(0, 10); // จำกัดความยาวไม่เกิน 10 ตัว
+            }
+            e.target.value = value;
+        });
+
         // ฟังก์ชันรับตำแหน่งและส่งข้อมูล
         async function getLocation() {
             const phone = document.getElementById("phoneNumber").value;
             const sendButton = document.getElementById("sendLocationBtn");
 
-            // ตรวจสอบเบอร์โทร
             if (!phone) {
                 alert("กรุณากรอกเบอร์โทรก่อนส่งพิกัด");
                 return;
@@ -97,12 +154,10 @@
                 return;
             }
 
-            // ตั้งค่าปุ่มเป็นสถานะกำลังโหลด
             sendButton.innerText = "กำลังส่ง...";
             sendButton.classList.add("loading");
             sendButton.disabled = true;
 
-            // ตรวจสอบการรองรับ Geolocation
             if (!navigator.geolocation) {
                 alert("❌ เบราว์เซอร์ของคุณไม่รองรับ Geolocation");
                 resetButton(sendButton);
@@ -110,14 +165,12 @@
             }
 
             try {
-                // ตรวจสอบว่า LIFF พร้อมใช้งาน
                 if (!liff.isLoggedIn()) {
                     alert("กรุณาเข้าสู่ระบบ LINE ก่อน");
                     liff.login();
                     return;
                 }
 
-                // รับตำแหน่งปัจจุบัน
                 const position = await new Promise((resolve, reject) => {
                     navigator.geolocation.getCurrentPosition(resolve, reject, {
                         enableHighAccuracy: true,
@@ -129,44 +182,37 @@
                 const latitude = position.coords.latitude;
                 const longitude = position.coords.longitude;
 
-                // สร้างข้อความที่จะส่ง
                 const message = {
                     type: "text",
                     text: `📍 ตำแหน่งของคุณ: https://www.google.com/maps?q=${latitude},${longitude}\n📱 เบอร์โทร: ${phone}`
                 };
 
-                // ส่งข้อความผ่าน LIFF
                 await liff.sendMessages([message]);
                 alert("✅ ส่งข้อมูลเรียบร้อยแล้ว!");
                 
-                // ปิดหน้าต่าง LIFF หลังจากส่งข้อมูลสำเร็จ
                 if (liff.isInClient()) {
                     liff.closeWindow();
                 }
             } catch (error) {
-                // จัดการข้อผิดพลาด
-                if (error.code === 1) { // PERMISSION_DENIED
+                if (error.code === 1) {
                     alert("❌ คุณปฏิเสธการเข้าถึงตำแหน่ง กรุณาอนุญาตเพื่อใช้งานฟีเจอร์นี้");
-                } else if (error.code === 3) { // TIMEOUT
+                } else if (error.code === 3) {
                     alert("❌ เกิดข้อผิดพลาด: เวลาในการรับตำแหน่งหมดอายุ");
                 } else {
                     console.error("Error: ", error);
                     alert("❌ เกิดข้อผิดพลาดในการส่งข้อมูล: " + error.message);
                 }
             } finally {
-                // รีเซ็ตปุ่มหลังจากส่งข้อมูลเสร็จ
                 resetButton(sendButton);
             }
         }
 
-        // ฟังก์ชันรีเซ็ตปุ่ม
         function resetButton(button) {
             button.innerText = "ส่งพิกัด";
             button.classList.remove("loading");
             button.disabled = false;
         }
 
-        // เริ่มต้น LIFF เมื่อโหลดหน้าเว็บ
         document.addEventListener("DOMContentLoaded", initializeLiff);
     </script>
 </body>
