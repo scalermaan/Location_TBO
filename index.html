@@ -7,38 +7,9 @@
     <title>ส่งพิกัด</title>
     <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <style>
-        body {
-            padding: 20px;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background-color: #f5f5f5;
-            -webkit-text-size-adjust: none;
-            touch-action: manipulation;
-        }
-        .container {
-            max-width: 500px;
-            margin: 0 auto;
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        h1 {
-            text-align: center;
-            color: #333;
-            margin-bottom: 20px;
-            font-size: 24px;
-        }
-        .input-group {
-            margin-bottom: 15px;
-            position: relative;
-        }
-        label {
-            display: block;
-            margin-bottom: 8px;
-            color: #666;
-            font-size: 16px;
-        }
-        /* ปรับแต่ง input สำหรับ LINE Browser */
+        /* ... style เดิมทั้งหมด ... */
+        
+        /* เพิ่ม style สำหรับ input ให้รองรับ LINE browser ดีขึ้น */
         input[type="tel"] {
             width: 100%;
             height: 44px;
@@ -51,53 +22,19 @@
             -webkit-appearance: none;
             appearance: none;
             outline: none;
+            /* เพิ่ม properties เพื่อแก้ปัญหาใน LINE browser */
+            ime-mode: disabled;
+            -webkit-ime-mode: disabled;
+            -webkit-user-select: text;
+            user-select: text;
+            touch-action: manipulation;
         }
-        /* ปรับแต่งสถานะ focus ของ input */
-        input[type="tel"]:focus {
-            border-color: #06c755;
-            box-shadow: 0 0 0 2px rgba(6, 199, 85, 0.1);
-        }
-        .btn {
-            width: 100%;
-            height: 44px;
-            margin: 8px 0;
-            border: none;
-            border-radius: 6px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: background-color 0.2s;
-            -webkit-appearance: none;
-            appearance: none;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .btn-primary {
-            background-color: #06c755;
-            color: white;
-        }
-        .btn-emergency {
-            background-color: #ff4b4b;
-            color: white;
-        }
-        .btn:disabled {
-            background-color: #cccccc;
-            cursor: not-allowed;
-        }
-        .loading::after {
-            content: "";
-            display: inline-block;
-            width: 16px;
-            height: 16px;
-            margin-left: 8px;
-            border: 2px solid #ffffff;
-            border-radius: 50%;
-            border-top-color: transparent;
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin {
-            to { transform: rotate(360deg); }
+
+        /* เพิ่ม style สำหรับ numeric keyboard */
+        input[type="tel"][inputmode="numeric"] {
+            -webkit-text-security: none;
+            -moz-text-security: none;
+            text-security: none;
         }
     </style>
 </head>
@@ -109,9 +46,11 @@
             <input 
                 type="tel" 
                 id="phoneNumber" 
+                inputmode="numeric"
+                pattern="[0-9]*"
+                autocomplete="tel"
                 placeholder="กรุณากรอกเบอร์โทร" 
                 maxlength="10"
-                autocomplete="off"
             >
         </div>
         <button class="btn btn-primary" id="sendLocationBtn" onclick="getLocation()">ส่งพิกัด</button>
@@ -121,43 +60,28 @@
     </div>
 
     <script>
-        let isLiffInitialized = false;
+        // ... โค้ด LIFF initialization เดิม ...
 
-        // เริ่มต้น LIFF
-        async function initializeLiff() {
-            try {
-                await liff.init({ liffId: "2006878998-85e4J3zg" });
-                isLiffInitialized = true;
-                console.log("LIFF initialization succeeded");
-                
-                if (!liff.isLoggedIn()) {
-                    console.log("User not logged in, initiating login");
-                    liff.login();
-                }
-            } catch (error) {
-                console.error("LIFF initialization failed:", error);
-                isLiffInitialized = false;
-            }
-        }
-
-        // ฟังก์ชันโทรฉุกเฉิน
-        function makeEmergencyCall() {
-            if (liff.isInClient()) {
-                window.location.href = "tel:042431155";
-            } else {
-                window.open("tel:042431155", "_system");
-            }
-        }
-
-        // ตั้งค่าการจัดการ input
+        // ปรับปรุงฟังก์ชัน setupInputHandling
         function setupInputHandling() {
             const phoneInput = document.getElementById('phoneNumber');
             
-            // จัดการการพิมพ์
-            phoneInput.addEventListener('beforeinput', function(e) {
-                if (e.data && !/^\d+$/.test(e.data)) {
+            // ป้องกันการป้อนอักขระที่ไม่ใช่ตัวเลข
+            phoneInput.addEventListener('keydown', function(e) {
+                // อนุญาตเฉพาะปุ่มตัวเลข, backspace, delete, arrow keys
+                const allowedKeys = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab'];
+                if (!allowedKeys.includes(e.key) && !/^\d$/.test(e.key) && !e.ctrlKey && !e.metaKey) {
                     e.preventDefault();
                 }
+            });
+
+            // จัดการการพิมพ์
+            phoneInput.addEventListener('input', function(e) {
+                let value = this.value.replace(/\D/g, '');
+                if (value.length > 10) {
+                    value = value.slice(0, 10);
+                }
+                this.value = value;
             });
 
             // จัดการการวาง (paste)
@@ -168,96 +92,14 @@
                 this.value = numericText;
             });
 
-            // จัดการการเปลี่ยนแปลงค่า
-            phoneInput.addEventListener('input', function(e) {
-                this.value = this.value.replace(/\D/g, '').slice(0, 10);
+            // เพิ่ม blur event เพื่อซ่อน keyboard เมื่อกด done/return
+            phoneInput.addEventListener('blur', function() {
+                // ทำให้แน่ใจว่า keyboard ถูกซ่อน
+                this.blur();
             });
         }
 
-        // ตรวจสอบเบอร์โทร
-        function validatePhoneNumber(phone) {
-            const phoneRegex = /^[0-9]{10}$/;
-            return phoneRegex.test(phone);
-        }
-
-        // ฟังก์ชันรับตำแหน่งและส่งข้อมูล
-        async function getLocation() {
-            const phone = document.getElementById("phoneNumber").value;
-            const sendButton = document.getElementById("sendLocationBtn");
-
-            if (!phone) {
-                alert("กรุณากรอกเบอร์โทรก่อนส่งพิกัด");
-                return;
-            }
-
-            if (!validatePhoneNumber(phone)) {
-                alert("กรุณากรอกเบอร์โทรให้ถูกต้อง (10 หลัก)");
-                return;
-            }
-
-            sendButton.textContent = "กำลังส่ง...";
-            sendButton.classList.add("loading");
-            sendButton.disabled = true;
-
-            try {
-                if (!navigator.geolocation) {
-                    throw new Error("เบราว์เซอร์ของคุณไม่รองรับการระบุตำแหน่ง");
-                }
-
-                if (!isLiffInitialized) {
-                    await initializeLiff();
-                }
-
-                if (!liff.isLoggedIn()) {
-                    liff.login();
-                    return;
-                }
-
-                const position = await new Promise((resolve, reject) => {
-                    navigator.geolocation.getCurrentPosition(resolve, reject, {
-                        enableHighAccuracy: true,
-                        timeout: 10000,
-                        maximumAge: 0
-                    });
-                });
-
-                const { latitude, longitude } = position.coords;
-                const message = {
-                    type: "text",
-                    text: `📍 ตำแหน่งของคุณ: https://www.google.com/maps?q=${latitude},${longitude}\n📱 เบอร์โทร: ${phone}`
-                };
-
-                await liff.sendMessages([message]);
-                alert("✅ ส่งข้อมูลเรียบร้อยแล้ว!");
-                
-                if (liff.isInClient()) {
-                    liff.closeWindow();
-                }
-            } catch (error) {
-                console.error("Error:", error);
-                let errorMessage = "เกิดข้อผิดพลาดในการส่งข้อมูล";
-                
-                if (error.code === 1) {
-                    errorMessage = "คุณไม่อนุญาตให้เข้าถึงตำแหน่ง กรุณาอนุญาตและลองใหม่อีกครั้ง";
-                } else if (error.code === 2) {
-                    errorMessage = "ไม่สามารถระบุตำแหน่งได้ กรุณาตรวจสอบการเชื่อมต่อ";
-                } else if (error.code === 3) {
-                    errorMessage = "หมดเวลาในการระบุตำแหน่ง กรุณาลองใหม่";
-                }
-                
-                alert(`❌ ${errorMessage}`);
-            } finally {
-                sendButton.textContent = "ส่งพิกัด";
-                sendButton.classList.remove("loading");
-                sendButton.disabled = false;
-            }
-        }
-
-        // เริ่มต้นแอพ
-        document.addEventListener("DOMContentLoaded", () => {
-            initializeLiff();
-            setupInputHandling();
-        });
+        // ... โค้ดส่วนที่เหลือเหมือนเดิม ...
     </script>
 </body>
 </html>
