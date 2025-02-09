@@ -1,0 +1,18 @@
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<script>
+    async function getLocationAndSend() {
+        await liff.init({ liffId: "YOUR_LIFF_ID" }); // ใส่ LIFF ID
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(position => {
+                const latitude = position.coords.latitude;
+                const longitude = position.coords.longitude;
+                const locationUrl = `https://www.google.com/maps?q=${latitude},${longitude}`;
+                liff.sendMessages([{ type: "text", text: "📍 พิกัดของฉัน: " + locationUrl }])
+                    .then(() => liff.closeWindow());
+            });
+        } else {
+            alert("ไม่สามารถใช้ GPS ได้");
+        }
+    }
+</script>
+<button onclick="getLocationAndSend()">ส่งพิกัด</button>
