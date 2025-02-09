@@ -3,69 +3,83 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ส่งพิกัด</title>
+    <title>LIFF App</title>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <style>
         body {
+            margin: 0;
+            padding: 0;
+            background-image: url('https://image.springnews.co.th/uploads/images/contents/w1024/2023/02/W3R7BVIOPuKaCJvXJJav.webp?x-image-process=style/xs-webp'); /* ใช้ลิงก์ภาพที่คุณให้มา */
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            height: 100vh;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            height: 100vh;
-            margin: 0;
-            font-family: Arial, sans-serif;
             text-align: center;
-        }
-        input {
-            font-size: 18px;
-            padding: 10px;
-            margin-bottom: 20px;
-            width: 80%;
-            max-width: 300px;
-        }
-        button {
-            font-size: 24px;
-            padding: 15px 30px;
-            background-color: #06C755;
+            font-family: Arial, sans-serif;
             color: white;
+        }
+
+        .container {
+            background: rgba(0, 0, 0, 0.5); /* ใส่พื้นหลังดำโปร่งใส */
+            padding: 20px;
+            border-radius: 15px;
+        }
+
+        button {
+            font-size: 20px;
+            padding: 15px 30px;
+            margin-top: 20px;
             border: none;
             border-radius: 10px;
             cursor: pointer;
+            background-color: #06c755;
+            color: white;
+            transition: 0.3s;
         }
-        button:disabled {
-            background-color: gray;
+
+        button:hover {
+            background-color: #04a344;
         }
     </style>
 </head>
 <body>
-    <input type="tel" id="phoneNumber" placeholder="กรอกเบอร์โทร" required>
-    <button onclick="getLocationAndSend()">ส่งพิกัดกระแสไฟฟ้าขัดข้อง</button>
+
+    <div class="container">
+        <h1>📍 กดเพื่อส่งพิกัด</h1>
+        <button onclick="getLocation()">ส่งพิกัด</button>
+    </div>
 
     <script>
-        async function getLocationAndSend() {
-            await liff.init({ liffId: "2006878998-85e4J3zg" }); // ใส่ LIFF ID ที่ถูกต้อง
-            const phoneNumber = document.getElementById("phoneNumber").value;
-            if (!phoneNumber) {
-                alert("กรุณากรอกเบอร์โทร");
-                return;
-            }
+        function getLocation() {
             if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(position => {
-                    const latitude = position.coords.latitude;
-                    const longitude = position.coords.longitude;
-                    const locationUrl = `https://www.google.com/maps?q=${latitude},${longitude}`;
-                    const message = `📞 เบอร์โทร: ${phoneNumber}\n📍 พิกัดของฉัน: ${locationUrl}`;
-                    liff.sendMessages([{ type: "text", text: message }])
-                        .then(() => liff.closeWindow())
-                        .catch(err => alert("เกิดข้อผิดพลาด: " + err));
-                }, () => {
-                    alert("ไม่สามารถดึงพิกัดได้");
-                });
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        alert("พิกัดของคุณ: " + position.coords.latitude + ", " + position.coords.longitude);
+                    },
+                    (error) => {
+                        alert("เกิดข้อผิดพลาด: " + error.message);
+                    }
+                );
             } else {
-                alert("อุปกรณ์นี้ไม่รองรับการใช้ GPS");
+                alert("เบราว์เซอร์ของคุณไม่รองรับ Geolocation");
             }
         }
+
+        // LIFF Initialization
+        async function initLIFF() {
+            try {
+                await liff.init({ liffId: "2006878998-85e4J3zg" });
+                console.log("LIFF Initialized");
+            } catch (error) {
+                console.error("LIFF Initialization Failed", error);
+            }
+        }
+        initLIFF();
     </script>
+
 </body>
 </html>
-
