@@ -69,15 +69,20 @@
         .call-btn:hover {
             background-color: #d32f2f;
         }
+
+        .loading {
+            background-color: #cccccc !important;
+            cursor: not-allowed;
+        }
     </style>
 </head>
 <body>
 
     <div class="container">
-        <h2>📍 กรุณากรอกเบอร์ติดต่อกลับด้วยครับ</h2>
+        <h2>📍 กดเพื่อส่งพิกัด</h2>
         <input type="text" id="phoneNumber" placeholder="แจ้งเบอร์โทรเพื่อติดต่อกลับ">
-        <button class="send-btn" onclick="getLocation()">ส่งพิกัด</button>
-        <button class="call-btn" onclick="emergencyCall()">เร่งด่วนโทร 042-431155</button>
+        <button id="sendLocationBtn" class="send-btn" onclick="getLocation()">ส่งพิกัด</button>
+        <button class="call-btn" onclick="emergencyCall()">📞 เร่งด่วนโทร 042-431155</button>
     </div>
 
     <script>
@@ -100,28 +105,54 @@
 
         async function getLocation() {
             let phone = document.getElementById("phoneNumber").value;
+            let sendButton = document.getElementById("sendLocationBtn");
+
             if (!phone) {
                 alert("กรุณากรอกเบอร์โทรก่อนส่งพิกัด");
                 return;
             }
+
+            // เปลี่ยนปุ่มเป็นกำลังโหลด
+            sendButton.innerText = "กำลังส่ง...";
+            sendButton.classList.add("loading");
+            sendButton.disabled = true;
 
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(async (position) => {
                     const latitude = position.coords.latitude;
                     const longitude = position.coords.longitude;
 
-                    await liff.sendMessages([
-                        {
-                            type: "text",
-                            text: `📍 ตำแหน่งของคุณ: https://www.google.com/maps?q=${latitude},${longitude}\n📞 เบอร์โทร: ${phone}`
-                        }
-                    ]);
+                    try {
+                        await liff.sendMessages([
+                            {
+                                type: "text",
+                                text: `📍 ตำแหน่งของคุณ: https://www.google.com/maps?q=${latitude},${longitude}\n📞 เบอร์โทร: ${phone}`
+                            }
+                        ]);
 
-                    alert("✅ ส่งข้อมูลเรียบร้อยแล้ว!");
-                    liff.closeWindow();
+                        alert("✅ ส่งข้อมูลเรียบร้อยแล้ว!");
+                        liff.closeWindow();
+                    } catch (error) {
+                        alert("❌ เกิดข้อผิดพลาดในการส่งข้อมูล: " + error);
+                        console.error(error);
+                    }
+
+                    // รีเซ็ตปุ่มหลังจากส่งข้อมูลเสร็จ
+                    sendButton.innerText = "ส่งพิกัด";
+                    sendButton.classList.remove("loading");
+                    sendButton.disabled = false;
+
+                }, (error) => {
+                    alert("❌ ไม่สามารถเข้าถึงตำแหน่งได้: " + error.message);
+                    sendButton.innerText = "ส่งพิกัด";
+                    sendButton.classList.remove("loading");
+                    sendButton.disabled = false;
                 });
             } else {
-                alert("เบราว์เซอร์ของคุณไม่รองรับ Geolocation");
+                alert("❌ เบราว์เซอร์ของคุณไม่รองรับ Geolocation");
+                sendButton.innerText = "ส่งพิกัด";
+                sendButton.classList.remove("loading");
+                sendButton.disabled = false;
             }
         }
     </script>
