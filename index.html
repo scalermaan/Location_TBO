@@ -1,18 +1,71 @@
-<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-<script>
-    async function getLocationAndSend() {
-        await liff.init({ liffId: "YOUR_LIFF_ID" }); // ใส่ LIFF ID
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(position => {
-                const latitude = position.coords.latitude;
-                const longitude = position.coords.longitude;
-                const locationUrl = `https://www.google.com/maps?q=${latitude},${longitude}`;
-                liff.sendMessages([{ type: "text", text: "📍 พิกัดของฉัน: " + locationUrl }])
-                    .then(() => liff.closeWindow());
-            });
-        } else {
-            alert("ไม่สามารถใช้ GPS ได้");
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ส่งพิกัด</title>
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            text-align: center;
         }
-    }
-</script>
-<button onclick="getLocationAndSend()">ส่งพิกัด</button>
+        input {
+            font-size: 18px;
+            padding: 10px;
+            margin-bottom: 20px;
+            width: 80%;
+            max-width: 300px;
+        }
+        button {
+            font-size: 24px;
+            padding: 15px 30px;
+            background-color: #06C755;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+        button:disabled {
+            background-color: gray;
+        }
+    </style>
+</head>
+<body>
+    <input type="tel" id="phoneNumber" placeholder="กรอกเบอร์โทร" required>
+    <button onclick="getLocationAndSend()">ส่งพิกัด</button>
+
+    <script>
+        async function getLocationAndSend() {
+            await liff.init({ liffId: "YOUR_LIFF_ID" }); // ใส่ LIFF ID ที่ถูกต้อง
+            const phoneNumber = document.getElementById("phoneNumber").value;
+            if (!phoneNumber) {
+                alert("กรุณากรอกเบอร์โทร");
+                return;
+            }
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(position => {
+                    const latitude = position.coords.latitude;
+                    const longitude = position.coords.longitude;
+                    const locationUrl = `https://www.google.com/maps?q=${latitude},${longitude}`;
+                    const message = `📞 เบอร์โทร: ${phoneNumber}\n📍 พิกัดของฉัน: ${locationUrl}`;
+                    liff.sendMessages([{ type: "text", text: message }])
+                        .then(() => liff.closeWindow())
+                        .catch(err => alert("เกิดข้อผิดพลาด: " + err));
+                }, () => {
+                    alert("ไม่สามารถดึงพิกัดได้");
+                });
+            } else {
+                alert("อุปกรณ์นี้ไม่รองรับการใช้ GPS");
+            }
+        }
+    </script>
+</body>
+</html>
+
