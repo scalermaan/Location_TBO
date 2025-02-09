@@ -9,11 +9,10 @@
         body {
             margin: 0;
             padding: 0;
-            background-image: url('https://raw.githubusercontent.com/scalermaan/photo/1381aee27891013b35b14ce32b97ea34f7c53d66/image1-170.jpg');
-            background-size: contain;
+            background-image: url('https://github.com/scalermaan/photo/blob/1381aee27891013b35b14ce32b97ea34f7c53d66/image1-170.jpg?raw=true');
+            background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
-            background-color: #f8f8f8;
             height: 100vh;
             display: flex;
             flex-direction: column;
@@ -36,15 +35,15 @@
             width: 90%;
             padding: 10px;
             margin: 10px 0;
-            border: none;
             border-radius: 5px;
+            border: none;
             font-size: 16px;
             text-align: center;
         }
 
         button {
             font-size: 18px;
-            padding: 12px 25px;
+            padding: 10px 20px;
             margin-top: 10px;
             border: none;
             border-radius: 10px;
@@ -65,49 +64,23 @@
         .call-btn {
             background-color: #ff3b30;
             color: white;
-            margin-top: 10px;
         }
 
         .call-btn:hover {
-            background-color: #d42b20;
+            background-color: #d32f2f;
         }
     </style>
 </head>
 <body>
 
     <div class="container">
-        <h1>📍 กดเพื่อส่งพิกัด</h1>
-        <input type="tel" id="phoneNumber" placeholder="📞 แจ้งเบอร์โทรเพื่อติดต่อกลับ">
+        <h2>📍 กดเพื่อส่งพิกัด</h2>
+        <input type="text" id="phoneNumber" placeholder="แจ้งเบอร์โทรเพื่อติดต่อกลับ">
         <button class="send-btn" onclick="getLocation()">ส่งพิกัด</button>
-        <button class="call-btn" onclick="emergencyCall()">📞 เร่งด่วนโทร 042-431155</button>
+        <button class="call-btn" onclick="emergencyCall()">เร่งด่วนโทร 042-431155</button>
     </div>
 
     <script>
-        function getLocation() {
-            let phone = document.getElementById("phoneNumber").value;
-            if (phone === "") {
-                alert("กรุณากรอกเบอร์โทรก่อนส่งพิกัด");
-                return;
-            }
-
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(
-                    (position) => {
-                        alert(`📍 พิกัดของคุณ: ${position.coords.latitude}, ${position.coords.longitude}\n📞 เบอร์โทร: ${phone}`);
-                    },
-                    (error) => {
-                        alert("เกิดข้อผิดพลาด: " + error.message);
-                    }
-                );
-            } else {
-                alert("เบราว์เซอร์ของคุณไม่รองรับ Geolocation");
-            }
-        }
-
-        function emergencyCall() {
-            window.location.href = "tel:042431155";
-        }
-
         async function initLIFF() {
             try {
                 await liff.init({ liffId: "2006878998-85e4J3zg" });
@@ -117,6 +90,40 @@
             }
         }
         initLIFF();
+
+        function emergencyCall() {
+            liff.openWindow({
+                url: "tel:042431155",
+                external: true
+            });
+        }
+
+        async function getLocation() {
+            let phone = document.getElementById("phoneNumber").value;
+            if (!phone) {
+                alert("กรุณากรอกเบอร์โทรก่อนส่งพิกัด");
+                return;
+            }
+
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(async (position) => {
+                    const latitude = position.coords.latitude;
+                    const longitude = position.coords.longitude;
+
+                    await liff.sendMessages([
+                        {
+                            type: "text",
+                            text: `📍 ตำแหน่งของคุณ: https://www.google.com/maps?q=${latitude},${longitude}\n📞 เบอร์โทร: ${phone}`
+                        }
+                    ]);
+
+                    alert("✅ ส่งข้อมูลเรียบร้อยแล้ว!");
+                    liff.closeWindow();
+                });
+            } else {
+                alert("เบราว์เซอร์ของคุณไม่รองรับ Geolocation");
+            }
+        }
     </script>
 
 </body>
