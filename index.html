@@ -9,7 +9,7 @@
         body {
             margin: 0;
             padding: 0;
-            background-image: url('https://image.springnews.co.th/uploads/images/contents/w1024/2023/02/W3R7BVIOPuKaCJvXJJav.webp?x-image-process=style/xs-webp'); /* ใช้ลิงก์ภาพที่คุณให้มา */
+            background-image: url('https://raw.githubusercontent.com/scalermaan/photo/1381aee27891013b35b14ce32b97ea34f7c53d66/image1-170.jpg'); /* ใช้ลิงก์จาก GitHub */
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
@@ -24,7 +24,7 @@
         }
 
         .container {
-            background: rgba(0, 0, 0, 0.5); /* ใส่พื้นหลังดำโปร่งใส */
+            background: rgba(0, 0, 0, 0.5);
             padding: 20px;
             border-radius: 15px;
         }
@@ -56,30 +56,4 @@
     <script>
         function getLocation() {
             if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(
-                    (position) => {
-                        alert("พิกัดของคุณ: " + position.coords.latitude + ", " + position.coords.longitude);
-                    },
-                    (error) => {
-                        alert("เกิดข้อผิดพลาด: " + error.message);
-                    }
-                );
-            } else {
-                alert("เบราว์เซอร์ของคุณไม่รองรับ Geolocation");
-            }
-        }
-
-        // LIFF Initialization
-        async function initLIFF() {
-            try {
-                await liff.init({ liffId: "2006878998-85e4J3zg" });
-                console.log("LIFF Initialized");
-            } catch (error) {
-                console.error("LIFF Initialization Failed", error);
-            }
-        }
-        initLIFF();
-    </script>
-
-</body>
-</html>
+                navigator.geolocatio
