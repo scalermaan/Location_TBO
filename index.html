@@ -1,161 +1,49 @@
-<!DOCTYPE html>
-<html lang="th">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LIFF App</title>
-    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-    <style>
-        body {
-            margin: 0;
-            padding: 0;
-            background-image: url('https://github.com/scalermaan/photo/blob/1381aee27891013b35b14ce32b97ea34f7c53d66/image1-170.jpg?raw=true');
-            background-size: cover;
-            background-position: center;
-            background-repeat: no-repeat;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
-            font-family: Arial, sans-serif;
-            color: white;
-        }
+async function getLocation() {
+    let phone = document.getElementById("phoneNumber").value;
+    let sendButton = document.getElementById("sendLocationBtn");
 
-        .container {
-            background: rgba(0, 0, 0, 0.6);
-            padding: 20px;
-            border-radius: 15px;
-            width: 80%;
-            max-width: 400px;
-        }
+    if (!phone) {
+        alert("กรุณากรอกเบอร์โทรก่อนส่งพิกัด");
+        return;
+    }
 
-        input {
-            width: 90%;
-            padding: 10px;
-            margin: 10px 0;
-            border-radius: 5px;
-            border: none;
-            font-size: 16px;
-            text-align: center;
-        }
+    // เปลี่ยนปุ่มเป็นกำลังโหลด
+    sendButton.innerText = "กำลังส่ง...";
+    sendButton.classList.add("loading");
+    sendButton.disabled = true;
 
-        button {
-            font-size: 18px;
-            padding: 10px 20px;
-            margin-top: 10px;
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-            transition: 0.3s;
-            width: 100%;
-        }
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(async (position) => {
+            const latitude = position.coords.latitude;
+            const longitude = position.coords.longitude;
 
-        .send-btn {
-            background-color: #06c755;
-            color: white;
-        }
-
-        .send-btn:hover {
-            background-color: #04a344;
-        }
-
-        .call-btn {
-            background-color: #ff3b30;
-            color: white;
-        }
-
-        .call-btn:hover {
-            background-color: #d32f2f;
-        }
-
-        .loading {
-            background-color: #cccccc !important;
-            cursor: not-allowed;
-        }
-    </style>
-</head>
-<body>
-
-    <div class="container">
-        <h2>📍 กดเพื่อส่งพิกัด</h2>
-        <input type="text" id="phoneNumber" placeholder="แจ้งเบอร์โทรเพื่อติดต่อกลับ">
-        <button id="sendLocationBtn" class="send-btn" onclick="getLocation()">ส่งพิกัด</button>
-        <button class="call-btn" onclick="emergencyCall()">📞 เร่งด่วนโทร 042-431155</button>
-    </div>
-
-    <script>
-        async function initLIFF() {
             try {
-                await liff.init({ liffId: "2006878998-85e4J3zg" });
-                console.log("LIFF Initialized");
+                await liff.sendMessages([{
+                    type: "text",
+                    text: `📍 ตำแหน่งของคุณ: https://www.google.com/maps?q=${latitude},${longitude}\n📞 เบอร์โทร: ${phone}`
+                }]);
+                alert("✅ ส่งข้อมูลเรียบร้อยแล้ว!");
+                liff.closeWindow();
             } catch (error) {
-                console.error("LIFF Initialization Failed", error);
-            }
-        }
-        initLIFF();
-
-        function emergencyCall() {
-            liff.openWindow({
-                url: "tel:042431155",
-                external: true
-            });
-        }
-
-        async function getLocation() {
-            let phone = document.getElementById("phoneNumber").value;
-            let sendButton = document.getElementById("sendLocationBtn");
-
-            if (!phone) {
-                alert("กรุณากรอกเบอร์โทรก่อนส่งพิกัด");
-                return;
+                console.error("Error sending message: ", error);  // เพิ่มบรรทัดนี้
+                alert("❌ เกิดข้อผิดพลาดในการส่งข้อมูล: " + error);
             }
 
-            // เปลี่ยนปุ่มเป็นกำลังโหลด
-            sendButton.innerText = "กำลังส่ง...";
-            sendButton.classList.add("loading");
-            sendButton.disabled = true;
+            // รีเซ็ตปุ่มหลังจากส่งข้อมูลเสร็จ
+            sendButton.innerText = "ส่งพิกัด";
+            sendButton.classList.remove("loading");
+            sendButton.disabled = false;
 
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(async (position) => {
-                    const latitude = position.coords.latitude;
-                    const longitude = position.coords.longitude;
-
-                    try {
-                        await liff.sendMessages([
-                            {
-                                type: "text",
-                                text: `📍 ตำแหน่งของคุณ: https://www.google.com/maps?q=${latitude},${longitude}\n📞 เบอร์โทร: ${phone}`
-                            }
-                        ]);
-
-                        alert("✅ ส่งข้อมูลเรียบร้อยแล้ว!");
-                        liff.closeWindow();
-                    } catch (error) {
-                        alert("❌ เกิดข้อผิดพลาดในการส่งข้อมูล: " + error);
-                        console.error(error);
-                    }
-
-                    // รีเซ็ตปุ่มหลังจากส่งข้อมูลเสร็จ
-                    sendButton.innerText = "ส่งพิกัด";
-                    sendButton.classList.remove("loading");
-                    sendButton.disabled = false;
-
-                }, (error) => {
-                    alert("❌ ไม่สามารถเข้าถึงตำแหน่งได้: " + error.message);
-                    sendButton.innerText = "ส่งพิกัด";
-                    sendButton.classList.remove("loading");
-                    sendButton.disabled = false;
-                });
-            } else {
-                alert("❌ เบราว์เซอร์ของคุณไม่รองรับ Geolocation");
-                sendButton.innerText = "ส่งพิกัด";
-                sendButton.classList.remove("loading");
-                sendButton.disabled = false;
-            }
-        }
-    </script>
-
-</body>
-</html>
+        }, (error) => {
+            alert("❌ ไม่สามารถเข้าถึงตำแหน่งได้: " + error.message);
+            sendButton.innerText = "ส่งพิกัด";
+            sendButton.classList.remove("loading");
+            sendButton.disabled = false;
+        });
+    } else {
+        alert("❌ เบราว์เซอร์ของคุณไม่รองรับ Geolocation");
+        sendButton.innerText = "ส่งพิกัด";
+        sendButton.classList.remove("loading");
+        sendButton.disabled = false;
+    }
+}
