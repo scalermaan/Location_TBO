@@ -1,105 +1,115 @@
-<!DOCTYPE html>
-<html lang="th">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
-    <meta name="format-detection" content="telephone=no">
-    <title>ส่งพิกัด</title>
-    <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-    <style>
-        /* ... style เดิมทั้งหมด ... */
-        
-        /* เพิ่ม style สำหรับ input ให้รองรับ LINE browser ดีขึ้น */
-        input[type="tel"] {
-            width: 100%;
-            height: 44px;
-            padding: 10px;
-            font-size: 16px;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            box-sizing: border-box;
-            background-color: #ffffff;
-            -webkit-appearance: none;
-            appearance: none;
-            outline: none;
-            /* เพิ่ม properties เพื่อแก้ปัญหาใน LINE browser */
-            ime-mode: disabled;
-            -webkit-ime-mode: disabled;
-            -webkit-user-select: text;
-            user-select: text;
-            touch-action: manipulation;
-        }
+import React, { useState, useEffect } from 'react';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { MapPin, Phone } from 'lucide-react';
 
-        /* เพิ่ม style สำหรับ numeric keyboard */
-        input[type="tel"][inputmode="numeric"] {
-            -webkit-text-security: none;
-            -moz-text-security: none;
-            text-security: none;
+const LocationShareForm = () => {
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const handlePhoneChange = (e) => {
+    const value = e.target.value.replace(/\D/g, '');
+    if (value.length <= 10) {
+      setPhoneNumber(value);
+    }
+  };
+
+  const getLocation = () => {
+    setIsLoading(true);
+    setError('');
+
+    if (!phoneNumber || phoneNumber.length !== 10) {
+      setError('กรุณากรอกเบอร์โทรศัพท์ให้ครบ 10 หลัก');
+      setIsLoading(false);
+      return;
+    }
+
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const lat = position.coords.latitude;
+          const lng = position.coords.longitude;
+          const mapsUrl = `https://www.google.com/maps?q=${lat},${lng}`;
+          
+          console.log({
+            phoneNumber,
+            location: { lat, lng },
+            mapsUrl
+          });
+          
+          setIsLoading(false);
+        },
+        (err) => {
+          setError('ไม่สามารถระบุตำแหน่งได้ กรุณาเปิดการใช้งาน GPS');
+          setIsLoading(false);
         }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>ส่งพิกัดที่ไฟดับได้เลยครับ</h1>
-        <div class="input-group">
-            <label for="phoneNumber">เบอร์โทร:</label>
-            <input 
-                type="tel" 
-                id="phoneNumber" 
-                inputmode="numeric"
-                pattern="[0-9]*"
-                autocomplete="tel"
-                placeholder="กรุณากรอกเบอร์โทร" 
-                maxlength="10"
-            >
+      );
+    } else {
+      setError('เบราว์เซอร์ไม่รองรับการระบุตำแหน่ง');
+      setIsLoading(false);
+    }
+  };
+
+  const handleEmergencyCall = () => {
+    // ใช้ tel: protocol เพื่อเปิดแอพโทรศัพท์ทันที
+    window.location.href = 'tel:042431155';
+  };
+
+  return (
+    <Card className="w-full max-w-md mx-auto p-6 space-y-6">
+      <h1 className="text-2xl font-bold text-center text-gray-800">
+        แจ้งพิกัดกระแสไฟฟ้าขัดข้อง
+      </h1>
+
+      <div className="space-y-4">
+        <div className="space-y-2">
+          <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700">
+            เบอร์โทรศัพท์:
+          </label>
+          <div className="relative">
+            <Phone className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+            <Input
+              type="tel"
+              id="phoneNumber"
+              value={phoneNumber}
+              onChange={handlePhoneChange}
+              className="pl-10"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              placeholder="กรุณากรอกเบอร์โทรศัพท์"
+              maxLength={10}
+            />
+          </div>
         </div>
-        <button class="btn btn-primary" id="sendLocationBtn" onclick="getLocation()">ส่งพิกัด</button>
-        <button class="btn btn-emergency" onclick="makeEmergencyCall()">
-            ☎️ โทรเร่งด่วน 042-431155
-        </button>
-    </div>
 
-    <script>
-        // ... โค้ด LIFF initialization เดิม ...
+        {error && (
+          <div className="text-red-500 text-sm text-center">
+            {error}
+          </div>
+        )}
 
-        // ปรับปรุงฟังก์ชัน setupInputHandling
-        function setupInputHandling() {
-            const phoneInput = document.getElementById('phoneNumber');
-            
-            // ป้องกันการป้อนอักขระที่ไม่ใช่ตัวเลข
-            phoneInput.addEventListener('keydown', function(e) {
-                // อนุญาตเฉพาะปุ่มตัวเลข, backspace, delete, arrow keys
-                const allowedKeys = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab'];
-                if (!allowedKeys.includes(e.key) && !/^\d$/.test(e.key) && !e.ctrlKey && !e.metaKey) {
-                    e.preventDefault();
-                }
-            });
+        <Button
+          onClick={getLocation}
+          disabled={isLoading}
+          className="w-full bg-blue-600 hover:bg-blue-700"
+        >
+          <MapPin className="mr-2 h-4 w-4" />
+          {isLoading ? 'กำลังระบุตำแหน่ง...' : 'ส่งพิกัด'}
+        </Button>
 
-            // จัดการการพิมพ์
-            phoneInput.addEventListener('input', function(e) {
-                let value = this.value.replace(/\D/g, '');
-                if (value.length > 10) {
-                    value = value.slice(0, 10);
-                }
-                this.value = value;
-            });
+        <Button
+          onClick={handleEmergencyCall}
+          variant="destructive"
+          className="w-full"
+        >
+          <Phone className="mr-2 h-4 w-4" />
+          เร่งด่วนโทร 042-431155
+        </Button>
+      </div>
+    </Card>
+  );
+};
 
-            // จัดการการวาง (paste)
-            phoneInput.addEventListener('paste', function(e) {
-                e.preventDefault();
-                const pastedText = (e.clipboardData || window.clipboardData).getData('text');
-                const numericText = pastedText.replace(/\D/g, '').slice(0, 10);
-                this.value = numericText;
-            });
-
-            // เพิ่ม blur event เพื่อซ่อน keyboard เมื่อกด done/return
-            phoneInput.addEventListener('blur', function() {
-                // ทำให้แน่ใจว่า keyboard ถูกซ่อน
-                this.blur();
-            });
-        }
-
-        // ... โค้ดส่วนที่เหลือเหมือนเดิม ...
-    </script>
-</body>
-</html>
+export default LocationShareForm;
